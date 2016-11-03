@@ -48,7 +48,7 @@ MongoClient.connect(url, function (err, db) {
         + "&tags="
         + req.params.tags
         + "&sort=relevance&extras=url_l&format=json";
-      
+
 
       opts = {
         url : searchURL
