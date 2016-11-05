@@ -14,6 +14,7 @@ var mongodb = require('mongodb');
 var dotenv = require('dotenv');
 var  https = require('https');
 var request = require('request');
+//var qs = require('querystring');
 
 
 var app = express();
@@ -28,6 +29,7 @@ var MongoClient = mongodb.MongoClient;
 // For locally running connection
 //var url = 'mongodb://localhost:27017/urlshortener';
 var url = process.env.MONGOLAB_URI;
+var key = process.env.FLICKR_API_KEY;
 
 // Use connect method to connect to the Server
 MongoClient.connect(url, function (err, db) {
@@ -40,23 +42,62 @@ MongoClient.connect(url, function (err, db) {
     app.get('/', function (req, res) {
       res.send(index.html);
     });
+    var photoColl = [];
 
     app.get('/api/imagesearch/:tags', function(req,res){
       if (err) throw err;
-      searchURL =  "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="
-        + process.env.FLICKR_API_KEY
-        + "&tags="
-        + req.params.tags
-        + "&sort=relevance&extras=url_l&format=json";
+
+      //Original Search String (this works)
+      //searchURL =  "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="
+      //  + process.env.FLICKR_API_KEY
+      //  + "&tags="
+      //  + req.params.tags
+      //  + "&sort=relevance&extras=url_l&format=json";
+
+      //using request module & querystring options
+      var API = "https://api.flickr.com/services/rest/";
+      var query = 10;
+      request({
+        method: 'GET',
+        uri: API,
+        qs: {
+          api_key: key,
+          method: "flickr.photos.search",
+          text: req.params.tags,
+          format: 'json',
+          nojsoncallback:1,
+          extras: 'url_l, url_t',
+          per_page:query
+        }
+      }, function(err, response, body){
 
 
-      opts = {
-        url : searchURL
-      };
 
-      request.get(opts, function (err, response, body) {
+      //request.get(searchURL, opts, function (err, response, body) {
         if (err) throw err;
-        res.send(body)
+
+        console.log(body);
+
+          var photosArr = JSON.parse(body).photos.photo;
+          console.log(photosArr);
+          photosArr.forEach(function(photo){
+            var url_l = photo.url_l;
+            var snippet = photo.title;
+            var thumb = photo.url_t;
+            var context = 'https://www.flickr.com/photos/'+ photo.owner +'/'+ photo.id;
+
+            var imgobj = {
+              url: url_l,
+              snippet: snippet,
+              thumbnail: thumb,
+              context: context
+            };
+
+            photoColl.push(imgobj);
+          })
+
+
+        res.send(photoColl)
         //Handle error, and body
       });
       //var tags = res.params.tags;
