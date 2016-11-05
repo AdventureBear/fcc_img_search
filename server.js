@@ -42,10 +42,12 @@ MongoClient.connect(url, function (err, db) {
     app.get('/', function (req, res) {
       res.send(index.html);
     });
-    var photoColl = [];
+
 
     app.get('/api/imagesearch/:tags', function(req,res){
       if (err) throw err;
+      var photoColl = [];
+
 
       //Original Search String (this works)
       //searchURL =  "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="
