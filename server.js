@@ -130,7 +130,7 @@ MongoClient.connect(url, function (err, db) {
       cursor.forEach(
         function(doc) {
 
-          searchHistory.push(doc.search);
+          searchHistory.push({"search": doc.search, "date": doc.date});
           console.log(searchHistory);
         },
         function(err) {
