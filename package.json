@@ -9,6 +9,7 @@
   "author": "Suzanne Atkinson",
   "license": "ISC",
   "dependencies": {
+    "assert": "^1.4.1",
     "dotenv": "^2.0.0",
     "express": "^4.14.0",
     "https": "^1.0.0",

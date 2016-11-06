@@ -12,9 +12,9 @@
 var express = require('express');
 var mongodb = require('mongodb');
 var dotenv = require('dotenv');
-var  https = require('https');
+//var  https = require('https');
 var request = require('request');
-//var qs = require('querystring');
+var assert = require('assert');
 
 
 var app = express();
@@ -23,8 +23,6 @@ app.set('port', (process.env.PORT || 5000));
 dotenv.config();
 
 var MongoClient = mongodb.MongoClient;
-
-
 // Connection URL. This is where your mongodb server is running.
 // For locally running connection
 //var url = 'mongodb://localhost:27017/urlshortener';
@@ -39,49 +37,60 @@ MongoClient.connect(url, function (err, db) {
     console.log('Connection established to database');
 
     // do some work here with the database.
+
+    //Routes Index function
     app.get('/', function (req, res) {
       res.send(index.html);
     });
 
-
+    //Routes image search
     app.get('/api/imagesearch/:tags', function(req,res){
       if (err) throw err;
+
       var photoColl = [];
-
-
-      //Original Search String (this works)
-      //searchURL =  "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="
-      //  + process.env.FLICKR_API_KEY
-      //  + "&tags="
-      //  + req.params.tags
-      //  + "&sort=relevance&extras=url_l&format=json";
-
-      //using request module & querystring options
       var API = "https://api.flickr.com/services/rest/";
       var query = 10;
+      var tags = req.params.tags;
+
+
+
       request({
         method: 'GET',
         uri: API,
         qs: {
           api_key: key,
           method: "flickr.photos.search",
-          text: req.params.tags,
+          text: tags,
           format: 'json',
           nojsoncallback:1,
           extras: 'url_l, url_t',
           per_page:query
         }
       }, function(err, response, body){
-
-
-
-      //request.get(searchURL, opts, function (err, response, body) {
         if (err) throw err;
 
-        console.log(body);
+          //if query successful, store query string in mongo db
+        var insertDocument = function(db, callback) {
+          db.collection('imgsearches').insertOne(
+            {
+              date: new Date(),
+              search: tags
+            }
+
+          ), function(err, result) {
+            assert.equal(err, null);
+            console.log("Inserted a document into the imgsearches collection.");
+            callback();
+          }
+        };
+
+        insertDocument(db, function() {
+
+        });
+
 
           var photosArr = JSON.parse(body).photos.photo;
-          console.log(photosArr);
+          //console.log(photosArr);
           photosArr.forEach(function(photo){
             var url_l = photo.url_l;
             var snippet = photo.title;
@@ -96,17 +105,46 @@ MongoClient.connect(url, function (err, db) {
             };
 
             photoColl.push(imgobj);
-          })
+          });
 
 
         res.send(photoColl)
-        //Handle error, and body
+
       });
-      //var tags = res.params.tags;
-      //var offset = res.params.offset;
-      //console.log(tags, offset);
+
 
     })
+
+    //Routes show history
+    app.get('/api/latest', function(req,res){
+      //if (err) throw err;
+      //var num = +req.params.number;
+      console.log("Getting history");
+      searchHistory = [];
+      var qry = {};
+      var projection = {"_id": 0, "search": 1, "date": 1};
+      var cursor = db.collection('imgsearches').find(qry);
+      cursor.project(projection);
+
+
+      cursor.forEach(
+        function(doc) {
+
+          searchHistory.push(doc.search);
+          console.log(searchHistory);
+        },
+        function(err) {
+          res.send(searchHistory);
+          //assert.equal(err, null);
+          //console.log("Our query was:" + JSON.stringify(qry));
+          //return db.close();
+        }
+      );
+
+
+
+
+    });
 
 
     //Create the server connection
