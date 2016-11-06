@@ -46,10 +46,10 @@ MongoClient.connect(url, function (err, db) {
     //Routes image search
     app.get('/api/imagesearch/:tags', function(req,res){
       if (err) throw err;
-
+      var page = req.query.page;
       var photoColl = [];
       var API = "https://api.flickr.com/services/rest/";
-      var query = 10;
+      var per_page = req.query.per_page;
       var tags = req.params.tags;
 
 
@@ -64,7 +64,8 @@ MongoClient.connect(url, function (err, db) {
           format: 'json',
           nojsoncallback:1,
           extras: 'url_l, url_t',
-          per_page:query
+          page: page,
+          per_page:per_page
         }
       }, function(err, response, body){
         if (err) throw err;
