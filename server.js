@@ -123,7 +123,7 @@ MongoClient.connect(url, function (err, db) {
       searchHistory = [];
       var qry = {};
       var projection = {"_id": 0, "search": 1, "date": 1};
-      var cursor = db.collection('imgsearches').find(qry);
+      var cursor = db.collection('imgsearches').find(qry).sort({"date": -1});
       cursor.project(projection);
 
 
